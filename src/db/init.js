@@ -1,5 +1,5 @@
-const sqlite3 = require('sqlite3').verbose();
-const config = require('../config');
+const sqlite3 = require("sqlite3").verbose();
+const config = require("../config");
 
 const initializeDatabase = () => {
   const db = new sqlite3.Database(config.dbPath);
@@ -13,7 +13,7 @@ const initializeDatabase = () => {
         lastCalled INTEGER
       )
     `);
-    
+
     // Create index for faster lookups
     db.run(`
       CREATE INDEX IF NOT EXISTS idx_lastCalled 
@@ -24,4 +24,4 @@ const initializeDatabase = () => {
   return db;
 };
 
-module.exports = { initializeDatabase }; 
+module.exports = { initializeDatabase };

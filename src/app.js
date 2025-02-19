@@ -1,7 +1,10 @@
 const express = require("express");
 const cors = require("cors");
 const { initializeDatabase } = require("./db/init");
-const rateLimiter = require("./middleware/rateLimiter");
+const {
+  rateLimiter,
+  deductResponseTokens,
+} = require("./middleware/rateLimiter");
 const { forwardRequest } = require("./utils/apiService");
 const config = require("./config");
 
@@ -31,6 +34,18 @@ app.post("/message", rateLimiter(db), async (req, res) => {
     let { text, roomId } = req.body;
 
     const result = await forwardRequest(text, roomId);
+
+    // Deduct tokens spend to generate response from the room
+    const resultText = result[0].text;
+    if (resultText) {
+      const remainingTokens = await deductResponseTokens(
+        db,
+        roomId,
+        resultText
+      );
+      result.tokensRemaining = remainingTokens;
+    }
+
     res.json(result);
   } catch (error) {
     console.error("Request forwarding error:", error);

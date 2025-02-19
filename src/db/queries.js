@@ -1,7 +1,7 @@
-const getRoomLimit = (db, roomId) => {
+const getRoom = (db, roomId) => {
   return new Promise((resolve, reject) => {
     db.get(
-      'SELECT * FROM rate_limits WHERE roomId = ?',
+      "SELECT * FROM rate_limits WHERE roomId = ?",
       [roomId],
       (err, row) => {
         if (err) reject(err);
@@ -11,7 +11,7 @@ const getRoomLimit = (db, roomId) => {
   });
 };
 
-const createRoomLimit = (db, roomId, tokens) => {
+const createRoom = (db, roomId, tokens) => {
   const now = Date.now();
   return new Promise((resolve, reject) => {
     db.run(
@@ -26,7 +26,7 @@ const createRoomLimit = (db, roomId, tokens) => {
   });
 };
 
-const updateRoomLimit = (db, roomId, tokensRemaining) => {
+const updateRoom = (db, roomId, tokensRemaining) => {
   const now = Date.now();
   return new Promise((resolve, reject) => {
     db.run(
@@ -43,7 +43,7 @@ const updateRoomLimit = (db, roomId, tokensRemaining) => {
 };
 
 module.exports = {
-  getRoomLimit,
-  createRoomLimit,
-  updateRoomLimit
-}; 
+  getRoom,
+  createRoom,
+  updateRoom,
+};
