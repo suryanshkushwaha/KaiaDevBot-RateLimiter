@@ -1,6 +1,6 @@
 const config = require("../config");
-const { estimateTokens } = require("../services/tokenEstimator");
-const { debounce } = require("../utils/debounce");
+const { estimateTokens } = require("../utils/tokenEstimator");
+const { debounce } = require("../utils/debouncer");
 const {
   getRoomLimit,
   createRoomLimit,
@@ -48,10 +48,10 @@ const rateLimiter = (db) => async (req, res, next) => {
             };
           }
         } else {
-          const minutesRemaining = (
+          const minutesRemaining = Math.ceil(
             (resetTimeInSeconds - secondsSinceLastCall) /
             60
-          ).toFixed(1);
+          ).toFixed(0);
           return {
             status: 429,
             data: {
