@@ -1,9 +1,18 @@
 const sqlite3 = require("sqlite3").verbose();
 const config = require("../config");
+const path = require("path");
+const fs = require("fs");
 
 const initializeDatabase = () => {
-  const db = new sqlite3.Database(config.dbPath);
+  // Create data directory if it doesn't exist
+  const dataDir = path.join(process.cwd(), "data");
+  if (!fs.existsSync(dataDir)) {
+    fs.mkdirSync(dataDir, { recursive: true });
+  }
 
+  // Update database path to be inside data directory
+  const dbPath = path.join(dataDir, path.basename(config.dbPath));
+  const db = new sqlite3.Database(dbPath);
   db.serialize(() => {
     db.run(`
       CREATE TABLE IF NOT EXISTS rate_limits (

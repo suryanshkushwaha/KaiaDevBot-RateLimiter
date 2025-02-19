@@ -1,3 +1,4 @@
+const path = require("path");
 require("dotenv").config();
 
 const config = {
@@ -6,7 +7,7 @@ const config = {
   serverPort: process.env.TARGET_SERVER_PORT || "3000",
   agentId: process.env.AGENT_ID,
   port: process.env.PORT || "3003",
-  dbPath: process.env.DB_PATH || "./rate-limiter.db",
+  dbPath: process.env.DB_PATH || path.join("data", "rate-limiter.db"),
   debounceWait: parseInt(process.env.DEBOUNCE_WAIT || "1000"),
 };
 
