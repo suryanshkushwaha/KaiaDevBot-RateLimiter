@@ -13,7 +13,7 @@ const db = initializeDatabase();
 
 // CORS options configuration
 const corsOptions = {
-  origin: ["https://kaia.io", "https://kaia-mainsite-rc-1-1.webflow.io"],
+  origin: ["https://kaia.io", "https://kaia-mainsite-rc-1-1.webflow.io"], // You can customize allowed origins
   methods: "POST",
   allowedHeaders: "Content-Type,Authorization", // You can customize allowed headers
 };
