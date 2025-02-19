@@ -1,5 +1,6 @@
 const config = require("../config");
 const { estimateTokens } = require("../services/tokenEstimator");
+const { debounce } = require("../utils/debounce");
 const {
   getRoomLimit,
   createRoomLimit,
@@ -14,59 +15,71 @@ const rateLimiter = (db) => async (req, res, next) => {
   }
 
   try {
-    let roomLimit = await getRoomLimit(db, roomId);
-    const now = Date.now();
+    // Wrap the main rate limiting logic in a debounce function
+    const handleRequest = async () => {
+      let roomLimit = await getRoomLimit(db, roomId);
+      const now = Date.now();
 
-    // If room doesn't exist, create new entry
-    if (!roomLimit) {
-      await createRoomLimit(db, roomId, config.initialTokens);
-      roomLimit = {
-        roomId,
-        tokensRemaining: config.initialTokens,
-        lastCalled: now,
-      };
-    }
-
-    // Estimate tokens needed for this request
-    const estimatedTokens = estimateTokens(req.body.text);
-
-    // Check if enough tokens are available
-    if (estimatedTokens > roomLimit.tokensRemaining) {
-      const secondsSinceLastCall = (now - roomLimit.lastCalled) / 1000;
-      const resetTimeInSeconds = config.resetHours * 3600;
-
-      if (secondsSinceLastCall >= resetTimeInSeconds) {
-        roomLimit.tokensRemaining = config.initialTokens;
-        // Recheck token availability after reset
-        if (estimatedTokens > roomLimit.tokensRemaining) {
-          return res.status(429).json({
-            error: `Not enough tokens available even after reset. Required: ${estimatedTokens}, Available: ${roomLimit.tokensRemaining}`,
-            tokensRemaining: roomLimit.tokensRemaining,
-            estimatedTokens: estimatedTokens,
-          });
-        }
-      } else {
-        const minutesRemaining = (
-          (resetTimeInSeconds - secondsSinceLastCall) /
-          60
-        ).toFixed(1);
-        return res.status(429).json({
-          error: `Please wait ${minutesRemaining} minutes before making another call`,
-          tokensRemaining: roomLimit.tokensRemaining,
-          estimatedTokens: estimatedTokens,
-        });
+      if (!roomLimit) {
+        await createRoomLimit(db, roomId, config.initialTokens);
+        roomLimit = {
+          roomId,
+          tokensRemaining: config.initialTokens,
+          lastCalled: now,
+        };
       }
+
+      const estimatedTokens = estimateTokens(req.body.text);
+
+      if (estimatedTokens > roomLimit.tokensRemaining) {
+        const secondsSinceLastCall = (now - roomLimit.lastCalled) / 1000;
+        const resetTimeInSeconds = config.resetHours * 3600;
+
+        if (secondsSinceLastCall >= resetTimeInSeconds) {
+          roomLimit.tokensRemaining = config.initialTokens;
+          if (estimatedTokens > roomLimit.tokensRemaining) {
+            return {
+              status: 429,
+              data: {
+                error: `Not enough tokens available even after reset. Required: ${estimatedTokens}, Available: ${roomLimit.tokensRemaining}`,
+                tokensRemaining: roomLimit.tokensRemaining,
+                estimatedTokens: estimatedTokens,
+              },
+            };
+          }
+        } else {
+          const minutesRemaining = (
+            (resetTimeInSeconds - secondsSinceLastCall) /
+            60
+          ).toFixed(1);
+          return {
+            status: 429,
+            data: {
+              error: `Please wait ${minutesRemaining} minutes before making another call`,
+              tokensRemaining: roomLimit.tokensRemaining,
+              estimatedTokens: estimatedTokens,
+            },
+          };
+        }
+      }
+
+      roomLimit.tokensRemaining -= estimatedTokens;
+      roomLimit.lastCalled = now;
+      await updateRoomLimit(db, roomId, roomLimit.tokensRemaining, now);
+
+      return { status: 200 };
+    };
+
+    // Apply debouncing with a 1-second wait time
+    const result = await debounce(
+      `${roomId}`,
+      handleRequest,
+      config.debounceWait
+    );
+
+    if (result.status === 429) {
+      return res.status(429).json(result.data);
     }
-
-    // If we reach here, either we have enough tokens or they were reset
-    // Update tokens and last called time
-    roomLimit.tokensRemaining -= estimatedTokens;
-    roomLimit.lastCalled = now;
-    console.log("tokensRemaining", roomLimit.tokensRemaining);
-
-    // Update room limit in database
-    await updateRoomLimit(db, roomId, roomLimit.tokensRemaining, now);
-    console.log("updated room limit");
 
     next();
   } catch (error) {

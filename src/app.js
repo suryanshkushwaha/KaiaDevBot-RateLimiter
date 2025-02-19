@@ -2,7 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const { initializeDatabase } = require("./db/init");
 const rateLimiter = require("./middleware/rateLimiter");
-const { forwardRequest } = require("./services/apiService");
+const { forwardRequest } = require("./utils/apiService");
 const config = require("./config");
 
 const app = express();
@@ -10,8 +10,8 @@ const db = initializeDatabase();
 
 // CORS options configuration
 const corsOptions = {
-  origin: "https://kaia.io", // Allow requests only from https://kaia.io
-  methods: "GET,POST,PUT,DELETE", // You can customize allowed methods
+  origin: ["https://kaia.io", "https://kaia-mainsite-rc-1-1.webflow.io"],
+  methods: "POST",
   allowedHeaders: "Content-Type,Authorization", // You can customize allowed headers
 };
 
@@ -28,9 +28,9 @@ app.get("/health", (req, res) => {
 // Main endpoint with rate limiting
 app.post("/message", rateLimiter(db), async (req, res) => {
   try {
-    let { text, userId, userName } = req.body;
+    let { text, roomId } = req.body;
 
-    const result = await forwardRequest(text);
+    const result = await forwardRequest(text, roomId);
     res.json(result);
   } catch (error) {
     console.error("Request forwarding error:", error);
