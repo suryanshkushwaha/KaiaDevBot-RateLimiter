@@ -1,6 +1,6 @@
 const config = require("../config");
 const { estimateTokens } = require("../utils/tokenEstimator");
-const { debounce } = require("../utils/debouncer");
+// const { debounce } = require("../utils/debouncer");
 const { getRoom, createRoom, updateRoom } = require("../db/queries");
 
 const rateLimiter = (db) => async (req, res, next) => {
@@ -11,7 +11,7 @@ const rateLimiter = (db) => async (req, res, next) => {
   }
 
   try {
-    // Wrap the main rate limiting logic in a debounce function
+    
     const handleRequest = async () => {
       let room = await getRoom(db, roomId);
       const now = Date.now();
@@ -66,11 +66,13 @@ const rateLimiter = (db) => async (req, res, next) => {
     };
 
     // Apply debouncing with a 1-second wait time
-    const result = await debounce(
-      `${roomId}`,
-      handleRequest,
-      config.debounceWait
-    );
+    // const result = await debounce(
+    //   `${roomId}`,
+    //   handleRequest,
+    //   config.debounceWait
+    // );
+
+    const result = await handleRequest();
 
     if (result.status === 429) {
       return res.status(429).json(result.data);

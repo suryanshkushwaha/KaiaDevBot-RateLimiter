@@ -8,7 +8,7 @@ const config = {
   agentId: process.env.AGENT_ID,
   port: process.env.PORT || "3003",
   dbPath: process.env.DB_PATH || path.join("data", "rate-limiter.db"),
-  debounceWait: parseInt(process.env.DEBOUNCE_WAIT || "1000"),
+  // debounceWait: parseInt(process.env.DEBOUNCE_WAIT || "1000"),
 };
 
 module.exports = config;

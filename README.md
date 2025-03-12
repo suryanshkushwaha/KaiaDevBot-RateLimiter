@@ -37,7 +37,7 @@ npm start
 | RESET_HOURS | Hours before token count resets | 5 |
 | PORT | Rate limiter service port | 3003 |
 | TARGET_SERVER_PORT | Target API server port | 3000 |
-| DEBOUNCE_WAIT | Request debounce wait time (ms) | 1000 |
+<!-- | DEBOUNCE_WAIT | Request debounce wait time (ms) | 1000 | -->
 | DB_PATH | SQLite database path | "./rate-limiter.db" |
 
 ## API Endpoints
